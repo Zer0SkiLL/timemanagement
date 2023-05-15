@@ -1,0 +1,17 @@
+.task-input input {
+    word-break: break-word;
+    height: 0.5em;
+}
+
+.task-input-large input {
+    word-break: break-word;
+    height: 0.5em;
+}
+
+.task-input-large.MuiFormControl-root {
+    width: 90%;
+} 
+
+.task-name-large label {
+    word-break: break-word;
+}
