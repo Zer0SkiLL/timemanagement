@@ -5,56 +5,110 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
+let transporter = null;
+
+const getTransporter = () => {
+  if (!transporter) {
+    transporter = createTransporter();
+  }
+  return transporter;
+};
+
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    host: process.env.MAIL_HOST,
+    port: process.env.MAIL_PORT_SECURE,
+    secure: true,
+    auth: {
+      user: process.env.MAIL_USER,
+      pass: process.env.MAIL_PASS,
+    },
+  });
+};
+
 export const sendVerificationEmail = async (email, token) => {
   try {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST,
-      port: process.env.MAIL_PORT_SECURE,
-      secure: true,
-      auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-      },
-    });
+    const transp = getTransporter();
+    if (transp) {
+      console.log('transporter ready');
 
-    // verify connection configuration
-    transporter.verify(function (error, success) {
-      if (error) {
-        console.log(error);
-      } else {
-        console.log('Server is ready to take our messages');
-      }
-    });
+      // compile the mail template
+      const template = fs.readFileSync(
+        path.resolve(__dirname, '../templates/mail/verificationMail.html'),
+        'utf-8'
+      );
+      const verificationLink = process.env.API_URL + 'auth/register/verification/' + token;
+      console.log(verificationLink);
 
-    // compile the mail template
-    const template = fs.readFileSync(
-      path.resolve(__dirname, '../templates/mail/verificationMail.html'),
-      'utf-8'
-    );
-    const verificationLink = process.env.API_URL + 'auth/register/verification/' + token;
-    console.log(verificationLink);
+      const compiledTemp = handlebars.compile(template);
 
-    const compiledTemp = handlebars.compile(template);
+      const html = compiledTemp({ verificationLink });
 
-    const html = compiledTemp({ verificationLink });
+      const mailOptions = {
+        from: process.env.MAIL_FROM,
+        to: email,
+        subject: 'Verify your Email',
+        html: html,
+      };
 
-    const mailOptions = {
-      from: process.env.MAIL_FROM,
-      to: email,
-      subject: 'Verify your Email',
-      html: html,
-    };
+      const inf = await transp.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.log(error);
+        } else {
+          console.log('mail sent');
+        }
+      });
+    } else {
+      console.error('not able to create mail transporter, mail has not been sent');
+      return;
+    }
+  } catch (err) {
+    console.log(err.message);
+  }
+};
 
-    const inf = await transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log(error);
-      } else {
-        console.log('mail sent');
-      }
-    });
+export const sendResetPasswordEmail = async (email, token) => {
+  try {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+
+    const transporter = createTransporter();
+
+    if (transporter) {
+      // compile the mail template
+      const template = fs.readFileSync(
+        path.resolve(__dirname, '../templates/mail/resetPasswordMail.html'),
+        'utf-8'
+      );
+
+      const resetLink = process.env.API_URL + 'auth/password-reset/' + token;
+      console.log(resetLink);
+
+      const compiledTemp = handlebars.compile(template);
+
+      const html = compiledTemp({ resetLink });
+
+      const mailOptions = {
+        from: process.env.MAIL_FROM,
+        to: email,
+        subject: 'Password reset request',
+        html: html,
+      };
+
+      const inf = await transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.log(error);
+        } else {
+          console.log('mail sent');
+        }
+      });
+    } else {
+      console.error('not able to create mail transporter, mail has not been sent');
+      return;
+    }
   } catch (err) {
     console.log(err.message);
   }
