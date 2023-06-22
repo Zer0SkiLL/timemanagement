@@ -10,8 +10,13 @@ import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.js';
 import whitelistRoutes from './routes/whitelist.js';
 import userRoutes from './routes/user.js';
+import workdayRoutes from './routes/workday.js';
+import commentRoutes from './routes/comment.js';
+import categoryRoutes from './routes/category.js';
+import taskRoutes from './routes/task.js';
 
 // Configurations
+process.env.TZ = 'Europe/Berlin';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const envFielPath = process.env.NODE_ENV === 'production' ? '.env' : '.env.dev';
@@ -29,6 +34,10 @@ app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
 app.use('/api/auth', authRoutes);
 app.use('/api/whitelist', whitelistRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/workday', workdayRoutes);
+app.use('/api/comment', commentRoutes);
+app.use('/api/category', categoryRoutes);
+app.use('/api/task', taskRoutes);
 
 // Mongoose Setup
 const PORT = process.env.PORT || 6001;

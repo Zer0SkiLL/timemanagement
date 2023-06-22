@@ -1,6 +1,9 @@
 import User from '../models/User.js';
 import Whitelist from '../models/Whitelist.js';
 import Jwt from 'jsonwebtoken';
+import Workday from '../models/Workday.js';
+import Category from '../models/Category.js';
+import Task from '../models/Task.js';
 
 // check if this email is whitelisted
 export const whitelist = async (req, res, next) => {
@@ -98,6 +101,78 @@ export const isOwnUserOrAdmin = async (req, res, next) => {
 export const isOwnUser = async (req, res, next) => {
   try {
     if (req.params.id === req.user.id) {
+      next();
+      return;
+    }
+
+    return res.status(403).send('Access Denied');
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// own workday
+export const isOwnWorkday = async (req, res, next) => {
+  const userId = req.user.id;
+  const workdayId = req.params.id;
+
+  try {
+    const workday = await Workday.findById(workdayId);
+    if (workday.user.toString() === userId) {
+      next();
+      return;
+    }
+
+    return res.status(403).send('Access Denied');
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const isOwnWorkdayOrAdmin = async (req, res, next) => {
+  const userId = req.user.id;
+  const workdayId = req.params.id;
+
+  try {
+    const workday = await Workday.findById(workdayId);
+    if (workday.user.toString() === userId || isAdmin(req, res, next)) {
+      next();
+      return;
+    }
+
+    return res.status(403).send('Access Denied');
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// own category
+export const isOwnCategory = async (req, res, next) => {
+  const userId = req.user.id;
+  const categoryId = req.params.id;
+
+  try {
+    const category = await Category.findById(categoryId);
+    if (category.user.toString() === userId) {
+      next();
+      return;
+    }
+
+    return res.status(403).send('Access Denied');
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// own task
+export const isOwnTask = async (req, res, next) => {
+  const userId = req.user.id;
+  const taskId = req.params.id;
+
+  try {
+    const task = await Task.findById(taskId);
+    const category = await Category.findById(task.category);
+    if (category.user.toString() === userId) {
       next();
       return;
     }
